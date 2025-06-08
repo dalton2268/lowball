@@ -66,7 +66,7 @@ export default function Home() {
       <p style={{ fontWeight: "bold", color: "#555" }}>
         Category: Top 100 Most Popular Baby Girl Names 2024
       </p>
-      <p>Try to guess items from today's Top 100 list!</p>
+      <p>Try to guess items from today&rsquo;s Top 100 list!</p>
       <p style={{ fontWeight: "bold", color: "crimson" }}>
         Lives left: {lives}
       </p>
@@ -153,7 +153,7 @@ export default function Home() {
             }}
           >
             <p style={{ fontWeight: "bold" }}>
-              You're out of lives! Final score: {score}
+              You&rsquo;re out of lives! Final score: {score}
             </p>
             <button
               onClick={() => setAllowGuessingAfterGameOver(true)}
