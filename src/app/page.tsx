@@ -262,7 +262,7 @@ export default function Home() {
               }}
             >
               <p style={{ fontWeight: "bold", marginBottom: "1rem" }}>
-                You're out of lives! Final score: {score}
+                You&apos;re out of lives! Final score: {score}
               </p>
               <button
                 onClick={() => setAllowGuessingAfterGameOver(true)}
