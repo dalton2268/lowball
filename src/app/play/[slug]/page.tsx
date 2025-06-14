@@ -13,8 +13,6 @@ export default async function PlayPage({ params }: { params: { slug: string } })
 
   if (error || !puzzle) return notFound();
 
-  const correctList: string[] = puzzle.correct_list ?? [];
-
 return (
   <PuzzleGame
     title={puzzle.title}
