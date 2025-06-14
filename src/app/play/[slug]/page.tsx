@@ -1,42 +1,25 @@
 import { supabase } from "@/utils/supabaseClient";
+import PuzzleGame from "@/components/PuzzleGame";
 import { notFound } from "next/navigation";
 
-export default async function PlayPage(props: { params: { slug: string } }) {
-  const { params } = await props;
-  const { slug } = params;
+export default async function PlayPage({ params }: { params: { slug: string } }) {
+  const slug = params.slug;
 
-  const { data: puzzle, error: puzzleError } = await supabase
+  const { data: puzzle, error } = await supabase
     .from("Puzzles")
     .select("*")
     .eq("slug", slug)
     .single();
 
-  if (puzzleError || !puzzle) {
-    return notFound();
-  }
+  if (error || !puzzle) return notFound();
 
-  const { data: entries, error: entriesError } = await supabase
-    .from("raw_csv_uploads")
-    .select("*")
-    .eq("list_name", slug)
-    .order("rank");
+  const correctList: string[] = puzzle.correct_list ?? [];
 
-  if (entriesError) {
-    return (
-      <div>Error loading entries: {entriesError.message}</div>
-    );
-  }
-
-  return (
-    <div>
-      <h1>{puzzle.title}</h1>
-      <ul>
-        {entries?.map((entry) => (
-          <li key={entry.id}>
-            #{entry.rank || "?"}: {entry.name}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+return (
+  <PuzzleGame
+    title={puzzle.title}
+    correctList={puzzle.correct_list ?? []}
+    autocompleteList={puzzle.autocomplete_list ?? []}
+  />
+);
 }
