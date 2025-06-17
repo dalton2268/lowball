@@ -18,6 +18,8 @@ return (
     title={puzzle.title}
     correctList={puzzle.correct_list ?? []}
     autocompleteList={puzzle.autocomplete_list ?? []}
+      revealTextList={puzzle.revealText_list}
+
   />
 );
 }

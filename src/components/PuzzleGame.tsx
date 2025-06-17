@@ -10,6 +10,9 @@ type PuzzleGameProps = {
   title: string;
   correctList: string[];
   autocompleteList: string[];
+  revealTextList?: string[]; // optional
+
+  
 };
 
 const Autocomplete = dynamic<AutocompleteProps<string, false, true, true>>(
@@ -23,7 +26,7 @@ const Autocomplete = dynamic<AutocompleteProps<string, false, true, true>>(
   { ssr: false }
 );
 
-export default function PuzzleGame({ title, correctList, autocompleteList }: PuzzleGameProps) {
+export default function PuzzleGame({ title, correctList, autocompleteList, revealTextList }: PuzzleGameProps) {
   const [isClient, setIsClient] = useState(false);
   const [guess, setGuess] = useState("");
   const [correctGuesses, setCorrectGuesses] = useState<string[]>([]);
@@ -185,7 +188,13 @@ export default function PuzzleGame({ title, correctList, autocompleteList }: Puz
                   }))
                   .sort((a, b) => a.rank - b.rank)
                   .map(({ guess, rank }, i) => (
-                    <li key={i}>#{rank + 1} — {guess}</li>
+                    <li key={i}>
+                      #{rank + 1} —{" "}
+                      {revealTextList && revealTextList[rank]
+                        ? revealTextList[rank]
+                        : guess}
+                    </li>
+
                   ))}
               </ul>
             </div>
@@ -193,9 +202,15 @@ export default function PuzzleGame({ title, correctList, autocompleteList }: Puz
             <div>
               <h3>❌ Incorrect Guesses ({wrongGuesses.length})</h3>
               <ul style={{ paddingLeft: "1rem" }}>
-                {wrongGuesses.map((g, i) => (
-                  <li key={i}>{g}</li>
-                ))}
+                {wrongGuesses.map((g, i) => {
+                  const idx = autocompleteList.findIndex(
+                    (item) => item.toLowerCase() === g.toLowerCase()
+                  );
+                  const displayText =
+                    idx !== -1 && revealTextList?.[idx] ? revealTextList[idx] : g;
+
+                  return <li key={i}>{displayText}</li>;
+                })}
               </ul>
             </div>
           </div>
@@ -277,7 +292,9 @@ export default function PuzzleGame({ title, correctList, autocompleteList }: Puz
                       fontWeight: isCorrect ? "bold" : "normal",
                     }}
                   >
-                    {item}
+                    {revealTextList && revealTextList[i]
+                      ? revealTextList[i]
+                      : item}
                   </li>
                 );
               })}
