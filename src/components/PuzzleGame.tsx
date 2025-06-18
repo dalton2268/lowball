@@ -122,7 +122,7 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
   > {/* ✅ Logo block */}
   <div style={{ maxWidth: "300px", margin: "0 auto 1.5rem auto" }}>
     <Image
-      src="/logo.svg"
+      src="/LogoWhite.svg"
       alt="LowBall logo"
       width={300}
       height={80}
