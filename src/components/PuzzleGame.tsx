@@ -131,7 +131,7 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
             }}
             filterOptions={(options, state) =>
               options.filter((option) =>
-                option.toLowerCase().startsWith(state.inputValue.toLowerCase())
+                option.toLowerCase().includes(state.inputValue.toLowerCase())
               )
             }
             renderInput={(params) => (
