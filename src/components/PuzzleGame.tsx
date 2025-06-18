@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import TextField from "@mui/material/TextField";
 import type { AutocompleteProps } from "@mui/material/Autocomplete";
@@ -35,8 +35,14 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [gameOver, setGameOver] = useState(false);
+  const [lastGuessCorrect, setLastGuessCorrect] = useState<null | boolean>(null);
   const [showAnswers, setShowAnswers] = useState(false);
   const [allowGuessingAfterGameOver, setAllowGuessingAfterGameOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [lastGuessDisplay, setLastGuessDisplay] = useState<{
+    text: string;
+    correct: boolean;
+  } | null>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -50,6 +56,8 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
 
   const handleGuess = (input: string) => {
     const cleaned = input.trim();
+    inputRef.current?.blur();
+
     if (!cleaned || showAnswers || (!allowGuessingAfterGameOver && gameOver)) return;
 
     const alreadyGuessed =
@@ -66,9 +74,14 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
 
     if (matchIndex !== -1) {
       setCorrectGuesses((prev) => [...prev, correctList[matchIndex]]);
+      setLastGuessDisplay({ text: correctList[matchIndex], correct: true });
       setScore((prev) => prev + (matchIndex + 1));
+      setLastGuessCorrect(true); // ✅ correct
     } else {
       setWrongGuesses((prev) => [...prev, cleaned]);
+      setLastGuessDisplay({ text: cleaned, correct: false });
+      setLastGuessCorrect(false); // ❌ wrong
+
       if (!gameOver && !allowGuessingAfterGameOver) {
         setLives((prev) => {
           const newLives = prev - 1;
@@ -79,6 +92,9 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
     }
 
     setGuess("");
+    setTimeout(() => inputRef.current?.focus(), 500);
+    setTimeout(() => setLastGuessCorrect(null), 800); // reset glow after 800ms
+
   };
 
   return (
@@ -144,6 +160,7 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
         renderInput={(params) => (
           <TextField
             {...params}
+            inputRef={inputRef}  
             placeholder="Start typing..."
             variant="outlined"
             sx={{
@@ -151,17 +168,35 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
               mb: 2,
               backgroundColor: "#fafafa",
               "& .MuiOutlinedInput-root": {
-                "& fieldset": { borderColor: "#ccc" },
+                "& fieldset": {
+                  borderColor:
+                    lastGuessCorrect === true
+                      ? "#22C55E"
+                      : lastGuessCorrect === false
+                      ? "#EF4444"
+                      : "#ccc",
+                  borderWidth:
+                    lastGuessCorrect === true || lastGuessCorrect === false ? "4px" : "1px",
+                  transition: "all 0.25s ease",
+                },
                 "&:hover fieldset": { borderColor: "#888" },
-                "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                "&.Mui-focused fieldset": {
+                  borderColor:
+                    lastGuessCorrect === true
+                      ? "#22C55E"
+                      : lastGuessCorrect === false
+                      ? "#EF4444"
+                      : "#3b82f6",
+                  borderWidth:
+                    lastGuessCorrect === true || lastGuessCorrect === false ? "2px" : "1px",
+                },
               },
               input: { color: "#111" },
             }}
-          />
+         />
         )}
       />
     )}
-
     <button
       onClick={handleSubmit}
       style={{
@@ -195,29 +230,53 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
                 ),
               }))
               .sort((a, b) => a.rank - b.rank)
-              .map(({ guess, rank }, i) => (
-                <li key={i}>
-                  #{rank + 1} —{" "}
-                  {revealTextList && revealTextList[rank]
-                    ? revealTextList[rank]
-                    : guess}
-                </li>
-              ))}
+              .map(({ guess, rank }, i) => {
+                const isLastGuess = lastGuessDisplay?.text?.toLowerCase() === guess.toLowerCase();
+
+                return (
+                  <li
+                    key={i}
+                    style={{
+                      color: isLastGuess ? "#15803d" : undefined, // green if last
+                      fontWeight: isLastGuess ? "bold" : undefined,
+                    }}
+                  >
+                    #{rank + 1} —{" "}
+                    {revealTextList && revealTextList[rank]
+                      ? revealTextList[rank]
+                      : guess}
+                  </li>
+                );
+              })
+            }
           </ul>
         </div>
 
         <div>
           <h3 style={{ color: "#b91c1c" }}>❌ Incorrect Guesses ({wrongGuesses.length})</h3>
           <ul style={{ paddingLeft: "1rem", color: "#333" }}>
-            {wrongGuesses.map((g, i) => {
-              const idx = autocompleteList.findIndex(
-                (item) => item.toLowerCase() === g.toLowerCase()
-              );
-              const displayText =
-                idx !== -1 && revealTextList?.[idx] ? revealTextList[idx] : g;
+          {wrongGuesses.map((g, i) => {
+            const idx = autocompleteList.findIndex(
+              (item) => item.toLowerCase() === g.toLowerCase()
+            );
+            const displayText =
+              idx !== -1 && revealTextList?.[idx] ? revealTextList[idx] : g;
 
-              return <li key={i}>{displayText}</li>;
-            })}
+            const isLastGuess = lastGuessDisplay?.text?.toLowerCase() === g.toLowerCase();
+
+            return (
+              <li
+                key={i}
+                style={{
+                  color: isLastGuess ? "#b91c1c" : undefined, // red if it's the last incorrect guess
+                  fontWeight: isLastGuess ? "bold" : undefined,
+                }}
+              >
+                {displayText}
+              </li>
+            );
+          })}
+
           </ul>
         </div>
       </div>
@@ -240,7 +299,10 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
           Keep Guessing
         </button>
         <button
-          onClick={() => setShowAnswers(true)}
+          onClick={() => {
+            setShowAnswers(true);
+            setLastGuessDisplay(null); // ← this clears the list highlight
+          }}
           style={{
             padding: "0.5rem 1rem",
             backgroundColor: "#e5e7eb",
