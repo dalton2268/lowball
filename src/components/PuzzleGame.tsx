@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import TextField from "@mui/material/TextField";
 import type { AutocompleteProps } from "@mui/material/Autocomplete";
 import "@fontsource/inter";
+import Image from "next/image";
 
 type PuzzleGameProps = {
   title: string;
@@ -82,226 +83,205 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
 
   return (
     <main
-      style={{
-        fontFamily: "Inter, sans-serif",
-        background: "#121212",
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "2rem",
-        color: "#E5E7EB",
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "#1E1E1E",
-          borderRadius: "16px",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
-          padding: "2.5rem",
-          maxWidth: "650px",
-          width: "100%",
-        }}
-      >
-        <h1 style={{ fontSize: "2.25rem", marginBottom: "0.5rem", color: "#FFFFFF" }}>
-          🎯 {title}
-        </h1>
-        <p style={{ marginBottom: "0.75rem", color: "#D1D5DB" }}>
-          Try to guess as many as you can!
-        </p>
-        <p style={{ fontWeight: "bold", color: "#F87171", marginBottom: "1rem" }}>
-          Lives left: {lives}
-        </p>
+  style={{
+    fontFamily: "Inter, sans-serif",
+    backgroundColor: "#f9f9f9",
+    minHeight: "100vh",
+    padding: "2rem",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "start",
+  }}
+>
+  <div
+    style={{
+      backgroundColor: "#ffffff",
+      border: "1px solid #ddd",
+      borderRadius: "16px",
+      padding: "2rem",
+      maxWidth: "720px",
+      width: "100%",
+      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)",
+    }}
+  > {/* ✅ Logo block */}
+  <div style={{ maxWidth: "300px", margin: "0 auto 1.5rem auto" }}>
+    <Image
+      src="/logo.svg"
+      alt="LowBall logo"
+      width={300}
+      height={80}
+      style={{ width: "100%", height: "auto" }}
+      priority
+    />
+  </div>
+    <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem", color: "#111" }}>{title}</h1>
+    <p style={{ color: "#555", marginBottom: "0.75rem" }}>Try to guess as many as you can!</p>
+    <p style={{ fontWeight: 600, color: "#b91c1c", marginBottom: "1rem" }}>
+      Lives left: {lives}
+    </p>
 
-        {isClient && (
-          <Autocomplete
-            freeSolo
-            disableClearable
-            options={sortedOptions}
-            inputValue={guess}
-            onInputChange={(_, value, reason) => {
-              if (reason === "input" && typeof value === "string") {
-                setGuess(value);
-              }
+    {isClient && (
+      <Autocomplete
+        freeSolo
+        disableClearable
+        options={sortedOptions}
+        inputValue={guess}
+        onInputChange={(_, value, reason) => {
+          if (reason === "input" && typeof value === "string") {
+            setGuess(value);
+          }
+        }}
+        onChange={(_, value) => {
+          if (typeof value === "string") {
+            handleGuess(value);
+          }
+        }}
+        filterOptions={(options, state) =>
+          options.filter((option) =>
+            option.toLowerCase().includes(state.inputValue.toLowerCase())
+          )
+        }
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            placeholder="Start typing..."
+            variant="outlined"
+            sx={{
+              width: "100%",
+              mb: 2,
+              backgroundColor: "#fafafa",
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": { borderColor: "#ccc" },
+                "&:hover fieldset": { borderColor: "#888" },
+                "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+              },
+              input: { color: "#111" },
             }}
-            onChange={(_, value) => {
-              if (typeof value === "string") {
-                handleGuess(value);
-              }
-            }}
-            filterOptions={(options, state) =>
-              options.filter((option) =>
-                option.toLowerCase().includes(state.inputValue.toLowerCase())
-              )
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Start typing..."
-                variant="outlined"
-                sx={{
-                  width: 300,
-                  mb: 2,
-                  input: { color: "#E5E7EB" },
-                  "& .MuiOutlinedInput-root": {
-                    "& fieldset": { borderColor: "#4B5563" },
-                    "&:hover fieldset": { borderColor: "#9CA3AF" },
-                    "&.Mui-focused fieldset": { borderColor: "#60A5FA" },
-                  },
-                  "& .MuiInputLabel-root": { color: "#9CA3AF" },
-                }}
-              />
-            )}
           />
         )}
+      />
+    )}
 
-        <button
-          onClick={handleSubmit}
-          style={{
-            padding: "0.6rem 1.2rem",
-            borderRadius: "8px",
-            backgroundColor: "#2563EB",
-            color: "white",
-            border: "none",
-            cursor: "pointer",
-            fontWeight: "bold",
-            marginBottom: "1rem",
-          }}
-        >
-          Submit
-        </button>
+    <button
+      onClick={handleSubmit}
+      style={{
+        padding: "0.6rem 1.2rem",
+        borderRadius: "6px",
+        backgroundColor: "#3b82f6",
+        color: "white",
+        border: "none",
+        cursor: "pointer",
+        fontWeight: "600",
+        marginBottom: "1rem",
+      }}
+    >
+      Submit
+    </button>
 
-        <div style={{ marginTop: "2rem" }}>
-          <h2 style={{ fontSize: "1.25rem", marginBottom: "1rem", color: "#93C5FD" }}>
-            Score: {score}
-          </h2>
-          <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
-            <div>
-              <h3>✅ Correct Guesses ({correctGuesses.length})</h3>
-              <ul style={{ paddingLeft: "1rem" }}>
-                {correctGuesses
-                  .map((guess) => ({
-                    guess,
-                    rank: correctList.findIndex(
-                      (item) => item.toLowerCase() === guess.toLowerCase()
-                    ),
-                  }))
-                  .sort((a, b) => a.rank - b.rank)
-                  .map(({ guess, rank }, i) => (
-                    <li key={i}>
-                      #{rank + 1} —{" "}
-                      {revealTextList && revealTextList[rank]
-                        ? revealTextList[rank]
-                        : guess}
-                    </li>
+    <div style={{ marginTop: "1.5rem" }}>
+      <h2 style={{ fontSize: "1.2rem", marginBottom: "1rem", color: "#1e40af" }}>
+        Score: {score}
+      </h2>
 
-                  ))}
-              </ul>
-            </div>
-
-            <div>
-              <h3>❌ Incorrect Guesses ({wrongGuesses.length})</h3>
-              <ul style={{ paddingLeft: "1rem" }}>
-                {wrongGuesses.map((g, i) => {
-                  const idx = autocompleteList.findIndex(
-                    (item) => item.toLowerCase() === g.toLowerCase()
-                  );
-                  const displayText =
-                    idx !== -1 && revealTextList?.[idx] ? revealTextList[idx] : g;
-
-                  return <li key={i}>{displayText}</li>;
-                })}
-              </ul>
-            </div>
-          </div>
-
-          {allowGuessingAfterGameOver && !showAnswers && (
-            <button
-              onClick={() => setShowAnswers(true)}
-              style={{
-                marginTop: "1.5rem",
-                padding: "0.5rem 1rem",
-                backgroundColor: "#374151",
-                border: "1px solid #4B5563",
-                borderRadius: "6px",
-                color: "#E5E7EB",
-                cursor: "pointer",
-              }}
-            >
-              Give Up and Reveal List
-            </button>
-          )}
-
-          {gameOver && !allowGuessingAfterGameOver && !showAnswers && (
-            <div
-              style={{
-                marginTop: "2rem",
-                border: "1px solid #4B5563",
-                padding: "1rem",
-                borderRadius: "6px",
-                backgroundColor: "#1F2937",
-              }}
-            >
-              <p style={{ fontWeight: "bold", marginBottom: "1rem" }}>
-                You’re out of lives! Final score: {score}
-              </p>
-              <button
-                onClick={() => setAllowGuessingAfterGameOver(true)}
-                style={{
-                  marginRight: "1rem",
-                  padding: "0.5rem 1rem",
-                  backgroundColor: "#2563EB",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                }}
-              >
-                Keep Guessing
-              </button>
-              <button
-                onClick={() => setShowAnswers(true)}
-                style={{
-                  padding: "0.5rem 1rem",
-                  borderRadius: "6px",
-                  border: "1px solid #4B5563",
-                  backgroundColor: "#374151",
-                  color: "#E5E7EB",
-                  cursor: "pointer",
-                }}
-              >
-                Reveal List
-              </button>
-            </div>
-          )}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "2rem" }}>
+        <div>
+          <h3 style={{ color: "#15803d" }}>✅ Correct Guesses ({correctGuesses.length})</h3>
+          <ul style={{ paddingLeft: "1rem", color: "#111" }}>
+            {correctGuesses
+              .map((guess) => ({
+                guess,
+                rank: correctList.findIndex(
+                  (item) => item.toLowerCase() === guess.toLowerCase()
+                ),
+              }))
+              .sort((a, b) => a.rank - b.rank)
+              .map(({ guess, rank }, i) => (
+                <li key={i}>
+                  #{rank + 1} —{" "}
+                  {revealTextList && revealTextList[rank]
+                    ? revealTextList[rank]
+                    : guess}
+                </li>
+              ))}
+          </ul>
         </div>
 
-        {showAnswers && (
-          <div style={{ marginTop: "2rem" }}>
-            <h3 style={{ color: "#A5B4FC" }}>Full List:</h3>
-            <ol style={{ paddingLeft: "1rem" }}>
-              {correctList.map((item, i) => {
-                const isCorrect = correctGuesses.some(
-                  (guess) => guess.toLowerCase() === item.toLowerCase()
-                );
-                return (
-                  <li
-                    key={i}
-                    style={{
-                      color: isCorrect ? "#10B981" : "#9CA3AF",
-                      fontWeight: isCorrect ? "bold" : "normal",
-                    }}
-                  >
-                    {revealTextList && revealTextList[i]
-                      ? revealTextList[i]
-                      : item}
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        )}
+        <div>
+          <h3 style={{ color: "#b91c1c" }}>❌ Incorrect Guesses ({wrongGuesses.length})</h3>
+          <ul style={{ paddingLeft: "1rem", color: "#333" }}>
+            {wrongGuesses.map((g, i) => {
+              const idx = autocompleteList.findIndex(
+                (item) => item.toLowerCase() === g.toLowerCase()
+              );
+              const displayText =
+                idx !== -1 && revealTextList?.[idx] ? revealTextList[idx] : g;
+
+              return <li key={i}>{displayText}</li>;
+            })}
+          </ul>
+        </div>
       </div>
-    </main>
+    </div>
+
+    {(gameOver || allowGuessingAfterGameOver) && !showAnswers && (
+      <div style={{ marginTop: "2rem" }}>
+        <button
+          onClick={() => setAllowGuessingAfterGameOver(true)}
+          style={{
+            padding: "0.5rem 1rem",
+            marginRight: "1rem",
+            backgroundColor: "#facc15",
+            border: "none",
+            borderRadius: "6px",
+            color: "#111",
+            cursor: "pointer",
+          }}
+        >
+          Keep Guessing
+        </button>
+        <button
+          onClick={() => setShowAnswers(true)}
+          style={{
+            padding: "0.5rem 1rem",
+            backgroundColor: "#e5e7eb",
+            border: "1px solid #ccc",
+            borderRadius: "6px",
+            color: "#111",
+            cursor: "pointer",
+          }}
+        >
+          Reveal List
+        </button>
+      </div>
+    )}
+
+    {showAnswers && (
+      <div style={{ marginTop: "2rem" }}>
+        <h3 style={{ color: "#1d4ed8" }}>Full List:</h3>
+        <ol style={{ paddingLeft: "1rem", color: "#111" }}>
+          {correctList.map((item, i) => {
+            const isCorrect = correctGuesses.some(
+              (guess) => guess.toLowerCase() === item.toLowerCase()
+            );
+            return (
+              <li
+                key={i}
+                style={{
+                  color: isCorrect ? "#15803d" : "#555",
+                  fontWeight: isCorrect ? "bold" : "normal",
+                }}
+              >
+                {revealTextList && revealTextList[i]
+                  ? revealTextList[i]
+                  : item}
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    )}
+  </div>
+</main>
+
   );
 }
