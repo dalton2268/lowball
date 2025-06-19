@@ -2,6 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import HowToPlayModal from "@/components/HowToPlayModal";
+import { useEffect, useState } from "react";
+import {HelpCircle } from "lucide-react";
 
 type Puzzle = {
   id: string;
@@ -16,7 +19,52 @@ export default function HomePageClient({
   puzzles: Puzzle[];
   error: string | null;
 }) {
+  const [showHelp, setShowHelp] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setShowHelp(true); // 👈 auto-show on initial load
+
+  }, []);
+
   return (
+    <>
+    {mounted && (
+    <>
+
+    <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    borderBottom: "1px solid #ddd",
+    padding: "0.75rem 1.25rem",
+    position: "sticky",
+    top: 0,
+    zIndex: 50,
+    boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+  }}
+>
+
+  <button
+    onClick={() => setShowHelp(true)}
+    style={{
+      background: "none",
+      border: "none",
+      fontSize: "1.25rem",
+      cursor: "pointer",
+      color: "#4B5563",
+    }}
+    title="How to play"
+  >
+    <HelpCircle size={22} />
+  </button>
+</div>
+</>
+)}
+
     <main
       style={{
         padding: "2rem",
@@ -84,6 +132,8 @@ export default function HomePageClient({
       ) : (
         <p style={{ color: "#555" }}>No puzzles available yet.</p>
       )}
+      <HowToPlayModal open={showHelp} onClose={() => setShowHelp(false)} />
     </main>
+    </>
   );
 }

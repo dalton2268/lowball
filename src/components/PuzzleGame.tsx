@@ -235,8 +235,8 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
                         ? "#EF4444"
                         : "#ccc",
                     borderWidth:
-                      lastGuessCorrect === true || lastGuessCorrect === false ? "4px" : "1px",
-                    transition: "all 0.25s ease",
+                      lastGuessCorrect === true || lastGuessCorrect === false ? "2px" : "1px",
+                    transition: "all 0.15s ease",
                   },
                   "&:hover fieldset": { borderColor: "#888" },
                   "&.Mui-focused fieldset": {
