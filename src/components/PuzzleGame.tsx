@@ -7,6 +7,7 @@ import type { AutocompleteProps } from "@mui/material/Autocomplete";
 import "@fontsource/inter";
 import Image from "next/image";
 import { ArrowLeft, HelpCircle } from "lucide-react";
+import HowToPlayModal from "./HowToPlayModal";
 
 type PuzzleGameProps = {
   title: string;
@@ -31,6 +32,7 @@ const Autocomplete = dynamic<AutocompleteProps<string, false, true, true>>(
 export default function PuzzleGame({ title, correctList, autocompleteList, revealTextList }: PuzzleGameProps) {
   const [isClient, setIsClient] = useState(false);
   const [guess, setGuess] = useState("");
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [correctGuesses, setCorrectGuesses] = useState<string[]>([]);
   const [wrongGuesses, setWrongGuesses] = useState<string[]>([]);
   const [score, setScore] = useState(0);
@@ -137,7 +139,7 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
 
       <button
         onClick={() =>
-          alert("Try to guess all the correct answers.\nYou lose a life for each incorrect guess.")
+          setShowHowToPlay(true)
         }
         style={{
           background: "none",
@@ -401,6 +403,9 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
       )}
     </div>
       </main>
+          <HowToPlayModal open={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
+
+
   </>
 
   );
