@@ -8,9 +8,11 @@ import "@fontsource/inter";
 import Image from "next/image";
 import { ArrowLeft, HelpCircle } from "lucide-react";
 import HowToPlayModal from "./HowToPlayModal";
+import { supabase } from "@/utils/supabaseClient";
 
 type PuzzleGameProps = {
   title: string;
+  slug: string;
   correctList: string[];
   autocompleteList: string[];
   revealTextList?: string[]; // optional
@@ -29,13 +31,15 @@ const Autocomplete = dynamic<AutocompleteProps<string, false, true, true>>(
   { ssr: false }
 );
 
-export default function PuzzleGame({ title, correctList, autocompleteList, revealTextList }: PuzzleGameProps) {
+export default function PuzzleGame({ title, slug, correctList, autocompleteList, revealTextList }: PuzzleGameProps) {
   const [isClient, setIsClient] = useState(false);
   const [guess, setGuess] = useState("");
+  const [playCount, setPlayCount] = useState<number | null>(null);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [correctGuesses, setCorrectGuesses] = useState<string[]>([]);
   const [wrongGuesses, setWrongGuesses] = useState<string[]>([]);
   const [score, setScore] = useState(0);
+  const [averageScore, setAverageScore] = useState<number | null>(null);
   const [lives, setLives] = useState(3);
   const [gameOver, setGameOver] = useState(false);
   const [lastGuessCorrect, setLastGuessCorrect] = useState<null | boolean>(null);
@@ -47,10 +51,53 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
     text: string;
     correct: boolean;
   } | null>(null);
-
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    }, []);
+
+    useEffect(() => {
+    console.log("gameOver changed:", gameOver);
+  }, [gameOver]);
+
+    useEffect(() => {
+      if (gameOver && !allowGuessingAfterGameOver) {
+        // Only run once at game end
+      const sendScore = async () => {
+        const { error } = await supabase.from("scores").insert({
+          puzzle_id: slug,
+          score: score,
+        });
+
+        const { data, error: avgError } = await supabase
+          .from("scores")
+          .select("score")
+          .eq("puzzle_id", slug);
+
+        if (data && data.length > 0) {
+          const total = data.reduce((sum, row) => sum + row.score, 0);
+          const avg = total / data.length;
+          setAverageScore(Math.round(avg));
+        } else {
+          console.log("⚠️ No scores found for this slug");
+        }
+
+        if (avgError) {
+          console.error("Error fetching scores:", avgError.message);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          const total = data.reduce((sum, row) => sum + row.score, 0);
+          const avg = total / data.length;
+          console.log("Average calculated:", avg);
+          setAverageScore(Math.round(avg));
+          setPlayCount(data.length);
+        }
+      };
+
+        sendScore();
+      }
+    }, [gameOver, allowGuessingAfterGameOver]);
 
   const sortedOptions = [...autocompleteList].sort((a, b) => a.localeCompare(b));
 
@@ -59,6 +106,8 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
   };
 
   const handleGuess = (input: string) => {
+    console.log("handleGuess called with:", input);
+
     const cleaned = input.trim();
     inputRef.current?.blur();
 
@@ -89,7 +138,10 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
       if (!gameOver && !allowGuessingAfterGameOver) {
         setLives((prev) => {
           const newLives = prev - 1;
-          if (newLives <= 0) setGameOver(true);
+          if (newLives <= 0) {
+            console.log("Setting gameOver to true");
+            setGameOver(true);
+          }
           return newLives;
         });
       }
@@ -256,6 +308,7 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
           )}
         />
       )}
+      
       <button
         onClick={handleSubmit}
         style={{
@@ -354,6 +407,7 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
               color: "#111",
               cursor: "pointer",
             }}
+            
           >
             Keep Guessing
           </button>
@@ -375,6 +429,26 @@ export default function PuzzleGame({ title, correctList, autocompleteList, revea
           </button>
         </div>
       )}
+      {gameOver && !allowGuessingAfterGameOver && (
+          <div style={{ marginTop: "2rem" }}>
+            <h2 style={{ fontSize: "1.5rem", color: "#111" }}>
+              🧠 Your Final Score: {score}
+            </h2>
+            {averageScore !== null && (
+              <p style={{ fontSize: "1rem", color: "#666", marginBottom: "1rem" }}>
+                (Average score for this puzzle: {averageScore})
+              </p>
+              
+            )}
+              {playCount !== null && (
+              <p style={{ fontSize: "0.95rem", color: "#666", marginBottom: "1rem" }}>
+                Played {playCount} {playCount === 1 ? "time" : "times"}
+              </p>
+            )}
+
+          </div>
+        )}
+
 
       {showAnswers && (
         <div style={{ marginTop: "2rem" }}>
