@@ -1,5 +1,5 @@
 "use client";
-
+import GameOverModal from "./GameOverModal";
 import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import TextField from "@mui/material/TextField";
@@ -35,6 +35,7 @@ export default function PuzzleGame({ title, slug, correctList, autocompleteList,
   const [isClient, setIsClient] = useState(false);
   const [guess, setGuess] = useState("");
   const [playCount, setPlayCount] = useState<number | null>(null);
+  const [showGameOverModal, setShowGameOverModal] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [correctGuesses, setCorrectGuesses] = useState<string[]>([]);
   const [wrongGuesses, setWrongGuesses] = useState<string[]>([]);
@@ -62,24 +63,13 @@ export default function PuzzleGame({ title, slug, correctList, autocompleteList,
     useEffect(() => {
       if (gameOver && !allowGuessingAfterGameOver) {
         // Only run once at game end
+
       const sendScore = async () => {
-        const { error } = await supabase.from("scores").insert({
-          puzzle_id: slug,
-          score: score,
-        });
 
         const { data, error: avgError } = await supabase
           .from("scores")
           .select("score")
           .eq("puzzle_id", slug);
-
-        if (data && data.length > 0) {
-          const total = data.reduce((sum, row) => sum + row.score, 0);
-          const avg = total / data.length;
-          setAverageScore(Math.round(avg));
-        } else {
-          console.log("⚠️ No scores found for this slug");
-        }
 
         if (avgError) {
           console.error("Error fetching scores:", avgError.message);
@@ -89,13 +79,19 @@ export default function PuzzleGame({ title, slug, correctList, autocompleteList,
         if (data && data.length > 0) {
           const total = data.reduce((sum, row) => sum + row.score, 0);
           const avg = total / data.length;
-          console.log("Average calculated:", avg);
           setAverageScore(Math.round(avg));
           setPlayCount(data.length);
+
+          // ✅ Only show modal after all data is set
+          setShowGameOverModal(true);
+        } else {
+          console.log("⚠️ No scores found for this slug");
+          setShowGameOverModal(true); // still show the modal
         }
       };
 
-        sendScore();
+      sendScore(); // ✅ just this
+
       }
     }, [gameOver, allowGuessingAfterGameOver]);
 
@@ -140,7 +136,10 @@ export default function PuzzleGame({ title, slug, correctList, autocompleteList,
           const newLives = prev - 1;
           if (newLives <= 0) {
             console.log("Setting gameOver to true");
+
             setGameOver(true);
+            setShowGameOverModal(true); // 👈 this line shows the modal
+            
           }
           return newLives;
         });
@@ -429,7 +428,7 @@ export default function PuzzleGame({ title, slug, correctList, autocompleteList,
           </button>
         </div>
       )}
-      {gameOver && !allowGuessingAfterGameOver && (
+      {/* {gameOver && !allowGuessingAfterGameOver && (
           <div style={{ marginTop: "2rem" }}>
             <h2 style={{ fontSize: "1.5rem", color: "#111" }}>
               🧠 Your Final Score: {score}
@@ -447,7 +446,7 @@ export default function PuzzleGame({ title, slug, correctList, autocompleteList,
             )}
 
           </div>
-        )}
+        )} */}
 
 
       {showAnswers && (
@@ -479,6 +478,25 @@ export default function PuzzleGame({ title, slug, correctList, autocompleteList,
       </main>
           <HowToPlayModal open={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
 
+        {showGameOverModal && (
+          
+          <GameOverModal
+            open={showGameOverModal}
+            onClose={() => setShowGameOverModal(false)}
+            score={score}
+            averageScore={averageScore}
+            playCount={playCount}
+            onKeepGuessing={() => {
+              setAllowGuessingAfterGameOver(true);
+              setShowGameOverModal(false);
+            }}
+            onReveal={() => {
+              setShowAnswers(true);
+              setLastGuessDisplay(null);
+              setShowGameOverModal(false);
+            }}
+          />
+        )}
 
   </>
 
