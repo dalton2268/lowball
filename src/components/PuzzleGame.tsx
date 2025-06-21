@@ -64,31 +64,37 @@ export default function PuzzleGame({ title, slug, correctList, autocompleteList,
       if (gameOver && !allowGuessingAfterGameOver) {
         // Only run once at game end
 
-      const sendScore = async () => {
+    const sendScore = async () => {
+      // ✅ 1. Insert the player's score
+      await supabase.from("scores").insert({
+        puzzle_id: slug,
+        score,
+      });
 
-        const { data, error: avgError } = await supabase
-          .from("scores")
-          .select("score")
-          .eq("puzzle_id", slug);
+      // ✅ 2. Wait briefly so Supabase can update
+      await new Promise((res) => setTimeout(res, 150));
 
-        if (avgError) {
-          console.error("Error fetching scores:", avgError.message);
-          return;
-        }
+      // ✅ 3. Fetch all scores to calculate the average
+      const { data, error: avgError } = await supabase
+        .from("scores")
+        .select("score")
+        .eq("puzzle_id", slug);
 
-        if (data && data.length > 0) {
-          const total = data.reduce((sum, row) => sum + row.score, 0);
-          const avg = total / data.length;
-          setAverageScore(Math.round(avg));
-          setPlayCount(data.length);
+      if (avgError) {
+        console.error("Error fetching scores:", avgError.message);
+        return;
+      }
 
-          // ✅ Only show modal after all data is set
-          setShowGameOverModal(true);
-        } else {
-          console.log("⚠️ No scores found for this slug");
-          setShowGameOverModal(true); // still show the modal
-        }
-      };
+      if (data && data.length > 0) {
+        const total = data.reduce((sum, row) => sum + row.score, 0);
+        const avg = total / data.length;
+        setAverageScore(Math.round(avg));
+        setPlayCount(data.length);
+      }
+
+      // ✅ 4. Show the Game Over modal once all data is ready
+      setShowGameOverModal(true);
+    };
 
       sendScore(); // ✅ just this
 
@@ -120,13 +126,18 @@ export default function PuzzleGame({ title, slug, correctList, autocompleteList,
     const matchIndex = correctList.findIndex(
       (item) => item.toLowerCase() === cleaned.toLowerCase()
     );
-
     if (matchIndex !== -1) {
       setCorrectGuesses((prev) => [...prev, correctList[matchIndex]]);
       setLastGuessDisplay({ text: correctList[matchIndex], correct: true });
-      setScore((prev) => prev + (matchIndex + 1));
+
+      // ✅ Only update score if the user is allowed to guess
+      if (!gameOver || allowGuessingAfterGameOver) {
+        setScore((prev) => prev + (matchIndex + 1));
+      }
+
       setLastGuessCorrect(true); // ✅ correct
-    } else {
+    }
+ else {
       setWrongGuesses((prev) => [...prev, cleaned]);
       setLastGuessDisplay({ text: cleaned, correct: false });
       setLastGuessCorrect(false); // ❌ wrong
@@ -242,6 +253,9 @@ export default function PuzzleGame({ title, slug, correctList, autocompleteList,
     </div>
       <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem", color: "#111" }}>{title}</h1>
       <p style={{ color: "#555", marginBottom: "0.75rem" }}>Try to guess as many as you can!</p>
+      {!showAnswers && (
+        <>
+
       <p style={{ fontWeight: 600, color: "#b91c1c", marginBottom: "1rem" }}>
         Lives left: {lives}
       </p>
@@ -323,11 +337,33 @@ export default function PuzzleGame({ title, slug, correctList, autocompleteList,
       >
         Submit
       </button>
-
+ </>
+)}
       <div style={{ marginTop: "1.5rem" }}>
         <h2 style={{ fontSize: "1.2rem", marginBottom: "1rem", color: "#1e40af" }}>
           Score: {score}
         </h2>
+  
+    {allowGuessingAfterGameOver && !showAnswers && (
+      <div style={{ marginTop: "2rem" }}>
+        <button
+          onClick={() => {
+            setShowAnswers(true);
+            setLastGuessDisplay(null);
+          }}
+          style={{
+            padding: "0.5rem 1rem",
+            backgroundColor: "#e5e7eb",
+            border: "1px solid #ccc",
+            borderRadius: "6px",
+            color: "#111",
+            cursor: "pointer",
+          }}
+        >
+          Reveal List
+        </button>
+      </div>
+    )}
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "2rem" }}>
           <div>
@@ -392,42 +428,6 @@ export default function PuzzleGame({ title, slug, correctList, autocompleteList,
           </div>
         </div>
       </div>
-
-      {(gameOver || allowGuessingAfterGameOver) && !showAnswers && (
-        <div style={{ marginTop: "2rem" }}>
-          <button
-            onClick={() => setAllowGuessingAfterGameOver(true)}
-            style={{
-              padding: "0.5rem 1rem",
-              marginRight: "1rem",
-              backgroundColor: "#facc15",
-              border: "none",
-              borderRadius: "6px",
-              color: "#111",
-              cursor: "pointer",
-            }}
-            
-          >
-            Keep Guessing
-          </button>
-          <button
-            onClick={() => {
-              setShowAnswers(true);
-              setLastGuessDisplay(null); // ← this clears the list highlight
-            }}
-            style={{
-              padding: "0.5rem 1rem",
-              backgroundColor: "#e5e7eb",
-              border: "1px solid #ccc",
-              borderRadius: "6px",
-              color: "#111",
-              cursor: "pointer",
-            }}
-          >
-            Reveal List
-          </button>
-        </div>
-      )}
       {/* {gameOver && !allowGuessingAfterGameOver && (
           <div style={{ marginTop: "2rem" }}>
             <h2 style={{ fontSize: "1.5rem", color: "#111" }}>
