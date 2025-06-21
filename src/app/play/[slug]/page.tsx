@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { supabase } from "@/utils/supabaseClient";
 import PuzzleGame from "@/components/PuzzleGame";
 import { notFound } from "next/navigation";
